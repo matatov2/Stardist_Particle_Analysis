@@ -11,16 +11,14 @@ Original file is located at
 # Commented out IPython magic to ensure Python compatibility.
 # %matplotlib inline
 
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import pims
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 
-mpl.rc('figure',figsize = (10,6))
-mpl.rc('image',cmap='gray')
+mpl.rc('figure', figsize=(10, 6))
+mpl.rc('image', cmap='gray')
 
-import imagecodecs
 image = 'sample.tif'
 ## image should be tif stack
 
@@ -28,80 +26,77 @@ image = 'sample.tif'
 video = pims.as_gray(pims.open(image))
 vid_size = 0
 for num, img in enumerate(video):
-  vid_size += 1
+    vid_size += 1
+
 
 ##pims pipeline for inverting the image to make dark-field for stardist
 @pims.pipeline
 def invert(frame):
-  new = 255-frame ## https://www.geeksforgeeks.org/python-color-inversion-using-pillow/
-  return new
+    new = 255 - frame  ## https://www.geeksforgeeks.org/python-color-inversion-using-pillow/
+    return new
+
 
 ##inverting the video for use in stardist segm
 inv = invert(video)
 
-import stardist
-import csbdeep
 from stardist.models import StarDist2D
-from stardist.plot import render_label
 from csbdeep.utils import normalize
-import matplotlib.pyplot as plt
 
 model = StarDist2D.from_pretrained('2D_versatile_fluo')
-
+"""
 plt.figure(figsize=(8,8))
 plt.imshow(inv[0], cmap='gray')
 plt.axis("off")
+plt.show()"""
+
 
 @pims.pipeline
 def stardist_segm(img):
-  img_labels, img_details = model.predict_instances(normalize(img))
-  return img_labels
+    img_labels, img_details = model.predict_instances(normalize(img))
+    return img_labels
+
 
 label_image = stardist_segm(inv)
-label_image
 
-num=32
+"""num=65
 plt.subplot(1,2,1)
 plt.imshow(video[num],cmap = "gray")
 plt.axis("off")
 plt.title("input")
+plt.show()
 
 toplot = render_label(label_image[num], img=video[num])
 plt.subplot(1,2,2)
 plt.imshow(toplot)
 plt.axis("off")
 plt.title("prediction + input overlayed")
+plt.show()
 
 plt.subplot(1,2,1)
 plt.imshow(video[num],cmap = "gray")
 plt.axis("off")
 plt.title("input")
+plt.show()
 
 toplot = render_label(label_image[num])
 plt.subplot(1,2,2)
 plt.imshow(toplot)
 plt.axis("off")
 plt.title("prediction")
+plt.show()"""
 
-import skimage
-from skimage.measure import regionprops, regionprops_table
+from skimage.measure import regionprops
 
 features = pd.DataFrame()
 for num, img in enumerate(inv):
-  for region in regionprops(label_image[num],intensity_image= img):
-    features = pd.concat([features ,pd.DataFrame(data = {'frame':num,'area':region.area}
-                                 ,index = [num])])
-    ##features = features.append([{'frame': num,
-                                 ##'area': region.area,
-                                 ##},])
-
-features['frame'][0], features['area'][0]
+    for region in regionprops(label_image[num], intensity_image=img):
+        features = pd.concat([features, pd.DataFrame(data={'frame': num, 'area': region.area}, index=[num])])
 
 objnum = np.zeros(vid_size)
 totalarea = np.zeros(vid_size)
-for num in range(0,vid_size - 1):
-  objnum[num] += features['frame'][num].size
-  totalarea[num] += np.sum(features['frame'][num])
 
-
-
+for num in range(0, vid_size - 1):
+    objnum[num] += features['frame'][num].size
+    totalarea[num] += features['area'][num].sum()
+print(totalarea[65])
+print(features['area'][65])
