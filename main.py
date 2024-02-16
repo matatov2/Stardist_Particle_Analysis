@@ -15,6 +15,7 @@ import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import pims
+import matplotlib.pyplot as plt
 
 mpl.rc('figure', figsize=(10, 6))
 mpl.rc('image', cmap='gray')
@@ -94,9 +95,28 @@ for num, img in enumerate(inv):
 
 objnum = np.zeros(vid_size)
 totalarea = np.zeros(vid_size)
+frames = np.zeros(vid_size)
 
-for num in range(0, vid_size - 1):
+for num in range(len(objnum)):
     objnum[num] += features['frame'][num].size
     totalarea[num] += features['area'][num].sum()
-print(totalarea[65])
-print(features['area'][65])
+    frames[num] += num
+
+##https://matplotlib.org/stable/gallery/subplots_axes_and_figures/two_scales.html
+fig, ax1 = plt.subplots()
+
+color = 'tab:red'
+ax1.set_xlabel('Frame')
+ax1.set_ylabel('Total Area of Particles (px^2)', color=color)
+ax1.plot(frames, totalarea, color=color)
+ax1.tick_params(axis='y', labelcolor=color)
+
+ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+
+color = 'tab:blue'
+ax2.set_ylabel('Number of Particles', color=color)  # we already handled the x-label with ax1
+ax2.plot(frames, objnum, color=color)
+ax2.tick_params(axis='y', labelcolor=color)
+
+fig.tight_layout()  # otherwise the right y-label is slightly clipped
+plt.show()
