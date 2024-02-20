@@ -120,3 +120,8 @@ ax2.tick_params(axis='y', labelcolor=color)
 
 fig.tight_layout()  # otherwise the right y-label is slightly clipped
 plt.show()
+
+frame = input("Choose a frame to make a histogram for:")
+plt.hist(features['area'][int(frame)])
+plt.xlabel("Area (px^2)")
+plt.show()
